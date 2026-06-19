@@ -1,0 +1,12 @@
+# Environments
+.env
+
+# Code
+app.py
+app.ipynb
+
+# Data
+data
+
+# Pycache
+__pycache__
