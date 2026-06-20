@@ -16,8 +16,8 @@ _client = None
 _db = None
 _collection = None
 
-MONGO_URL = os.getenv("MONGODB_URL", "mongodb://127.0.0.1:27007/")
-MONGO_DB   = os.getenv("MONGODB_DATABASE", "UniASK")
+MONGO_URL = os.getenv("MONGODB_URL", "mongodb+srv://kayfa:ahm2004514@cluster0.riomgta.mongodb.net/")
+MONGO_DB   = os.getenv("MONGODB_DATABASE", "Kayfa_Sales_Agent")
 COLLECTION = "crm_tickets"
 
 

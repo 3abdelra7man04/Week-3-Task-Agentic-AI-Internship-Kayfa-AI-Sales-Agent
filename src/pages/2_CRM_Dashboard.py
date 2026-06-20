@@ -8,7 +8,10 @@ import pathlib
 from datetime import datetime
 import streamlit as st
 
-from utils.components import page_header, page_footer, get_base64_image
+from utils.components import page_header, page_footer, get_base64_image, lang_toggle, t
+
+from _mock_data import MOCK_TICKETS
+from _mongo import get_tickets, is_connected
 
 logo_base64 = get_base64_image("kayfa logo.svg")
 
@@ -19,9 +22,7 @@ _views_dir = pathlib.Path(__file__).parent.parent
 if str(_views_dir) not in sys.path:
     sys.path.insert(0, str(_views_dir))
 
-from _style import lang_toggle
-from _mock_data import MOCK_TICKETS
-from _mongo import get_tickets, is_connected
+
 
 # ─── Page config ─────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -206,3 +207,5 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+
+page_footer(logo_base64)

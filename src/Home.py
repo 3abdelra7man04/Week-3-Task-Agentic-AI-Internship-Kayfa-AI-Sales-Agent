@@ -1,8 +1,18 @@
+from dotenv import load_dotenv
 import streamlit as st
 import pandas as pd
-from utils.mongo import load_all_data, get_latest_state, save_dashboard_state, apply_filters
 from utils.styles import apply_styles
 from utils.components import get_base64_image
+from helpers.config import get_settings
+from pymongo import MongoClient
+from stores.llm.LLMFactory import LLMFactory
+from stores.llm.templates.template_parser import TemplateParser
+from dataclasses import dataclass
+from pymongo.database import Database
+from pydantic_ai import Agent
+from tools.courses_tools import list_all_courses_summaries, get_course_details
+from tools.roadmaps_tools import list_all_roadmaps, get_roadmap_details
+from tools.crm_tools import save_crm_ticket
 
 # ── Page Config (must be first) ───────────────────────────────────────────────
 st.set_page_config(
@@ -16,6 +26,47 @@ st.set_page_config(
 apply_styles()
 
 logo_base64 = get_base64_image("kayfa logo.svg")
+
+# --- 2. Global Resource Lifecycle Caching --------------------------------------
+@st.cache_resource
+def get_global_resources():
+    settings = get_settings() # Grab your project settings
+    
+    # Initialize MongoDB Client
+    client = MongoClient(settings.MONGODB_URL)
+    db = client[settings.MONGODB_DATABASE]
+    
+    
+    # LLMFactory instance
+    llm_factory = LLMFactory(settings= settings)
+
+    # template parser
+    template_parser = TemplateParser(language=settings.PRIMARY_LANG, default_language=settings.DEFAULT_LANG)
+    
+    # deps
+    @dataclass
+    class AgentDeps:
+        db: Database | None = None   # MongoDB database — may be None if offline
+
+    # toolset
+    toolset = [list_all_courses_summaries, get_course_details, get_roadmap_details,
+               list_all_roadmaps, save_crm_ticket]
+
+    # create agent client
+    agent_client = Agent(
+        model = "openrouter:google/gemini-3-flash-preview",
+        deps_type = AgentDeps,
+        system_prompt = template_parser.get("rag", "system_prompt"),
+        toolsets=toolset
+    )
+
+    
+    return {"settings": settings, "db": db, "agent_client": agent_client, "template_parser": template_parser}
+
+# Warm up the resources once and inject them into session state for all sub-pages
+if "resources" not in st.session_state:
+    st.session_state.resources = get_global_resources()
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # NAVIGATION ROUTING (Must be initialized before st.page_link is called)

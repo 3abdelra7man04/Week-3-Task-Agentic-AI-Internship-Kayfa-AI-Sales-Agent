@@ -21,15 +21,18 @@ class Settings(BaseSettings):
     
     # ---------------------- LLM Config ----------------------
 
+    AGENT_BACKEND: str
     EXTRACTION_BACKEND: str
     GENERATION_BACKEND: str
     EMBEDDING_BACKEND: str
     RERANKING_BACKEND: str
 
+    OPENROUTER_API_KEY: str
     OPENAI_API_KEY: str
     OPENAI_API_URL: str
     COHERE_API_KEY: str
 
+    AGENT_MODEL_ID: str = None
     EXTRACTION_MODEL_ID: str = None
     GENERATION_MODEL_ID: str = None
     EMBEDDING_MODEL_ID: str = None
