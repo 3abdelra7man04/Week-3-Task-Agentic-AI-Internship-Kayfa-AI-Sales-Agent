@@ -60,7 +60,7 @@ def lang_toggle(default: str = "ar") -> str:
         options = ["🇸🇦 العربية", "🇬🇧 English"]
         idx = 0 if st.session_state["lang"] == "ar" else 1
         chosen = st.selectbox(
-            label="",
+            label="Language",
             options=options,
             index=idx,
             key="lang_select",

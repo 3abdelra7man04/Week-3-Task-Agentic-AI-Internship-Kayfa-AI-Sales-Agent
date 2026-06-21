@@ -9,12 +9,12 @@ from ..schemes.retrieved_documents import RetrievedDocuments
 class QdrantDBProvider(VectordbInterface):
     
     # constructor
-    def __init__(self, db_url: str, distance_method: str):
+    def __init__(self, db_url: str, db_key: str, distance_method: str):
         super().__init__()
 
         self.db_url = db_url
 
-        self.client = QdrantClient(url = db_url)
+        self.client = QdrantClient(url = db_url, api_key=db_key)
 
         # cosine distance
         if distance_method == DistanceMethodsEnums.COSINE.value:
@@ -192,14 +192,14 @@ class QdrantDBProvider(VectordbInterface):
                                                             limit= limit
                                                         ),
                                                     ],
-                                            query=FusionQuery(fusion=Fusion.RRF), limit=limit).points
+                                            query=FusionQuery(fusion=Fusion.RRF), limit=limit, with_payload=True).points
         
         if not results:
             self.logger.error(f"search error : {collection_name}")
             return None
         
         return [RetrievedDocuments(**{
-            "text":result.payload["text"],
+            "text": result.payload.get("text", "") if result.payload else "",
             "score": result.score
-        }) for result in results]
+        }) for result in results if result.payload]
     

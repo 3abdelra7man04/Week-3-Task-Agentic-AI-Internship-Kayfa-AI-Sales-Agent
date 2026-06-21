@@ -42,7 +42,10 @@ def get_course_details(ctx: RunContext[DatabaseDeps], course_id: str) -> str:
     """
     Fetch the full, detailed document for a specific course using its unique ID.
     Use this tool ONLY after identifying the correct course_id from list_all_courses.
-    
+
+    This tool returns a structured document containing fields such as: 
+    _id, id, provider, host, name, track, summary, link, duration, level, prerequisites, and roadmaps.
+
     Args:
         course_id: The unique string identifier of the course (e.g., 'py-101').
     """

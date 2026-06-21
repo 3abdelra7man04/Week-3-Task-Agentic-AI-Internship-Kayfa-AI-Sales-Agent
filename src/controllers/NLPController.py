@@ -1,9 +1,7 @@
-from .BaseController import BaseController
-from models.db_schemes import Project
 from models.db_schemes import DataChunk
 from stores.llm.llm_enums import DocumentTypeEnum
 
-class NLPController(BaseController):
+class NLPController():
     def __init__(self, generation_client, embedding_client, vectordb_client, template_parser,
                  reranking_client = None):
         super().__init__()
@@ -19,12 +17,12 @@ class NLPController(BaseController):
         self.template_parser = template_parser
 
     # function to create collection name
-    def create_collection_name(self, project_id: str):
-        return f"collection_{project_id}".strip()
+    def create_collection_name(self, collection_id: str):
+        return f"{collection_id}".strip()
     
     # reset vectordb collection
-    def reset_vectordb_collection(self, Project: Project):
-        collection_name = self.create_collection_name(project_id=Project.project_id)
+    def reset_vectordb_collection(self, collection_id: str):
+        collection_name = self.create_collection_name(collection_id=collection_id)
 
         try:
             result = self.vectordb_client.delete_collection(collection_name=collection_name)
@@ -37,8 +35,8 @@ class NLPController(BaseController):
        
     
     # vectordb collection info
-    def get_vector_db_collection_info(self, Project: Project):
-        collection_name = self.create_collection_name(project_id=Project.project_id)
+    def get_vector_db_collection_info(self, collection_id: str):
+        collection_name = self.create_collection_name(collection_id=collection_id)
 
         try:
             result = self.vectordb_client.get_collection_info(collection_name=collection_name)
@@ -49,10 +47,10 @@ class NLPController(BaseController):
             return False
     
     # vectordb indexing
-    def index_into_vectordb(self, Project: Project, chunks: list[DataChunk], do_reset: bool = False):
+    def index_into_vectordb(self, collection_id: str, chunks: list[DataChunk], do_reset: bool = False):
         
         # get collcetion name
-        collection_name = self.create_collection_name(project_id=Project.project_id)
+        collection_name = self.create_collection_name(collection_id=collection_id)
 
         # create collection
         _ = self.vectordb_client.create_collection(collection_name = collection_name, 
@@ -72,10 +70,10 @@ class NLPController(BaseController):
         return is_inserted
 
     # delete a certain file indices from vectordb
-    async def delete_file_from_vectordb(self, Project: Project, file_chunks: list[DataChunk]):
+    async def delete_file_from_vectordb(self, collection_id: str, file_chunks: list[DataChunk]):
         
         # get collection name
-        collection_name = self.create_collection_name(project_id=Project.project_id)
+        collection_name = self.create_collection_name(collection_id=collection_id)
         
         if not file_chunks:
             return False
@@ -114,10 +112,10 @@ class NLPController(BaseController):
         return HyDE, HyDE_prompt_tokens, HyDE_completion_tokens
 
     
-    def search_in_vectordb(self, Project: Project, query: str, limit: int):
+    def search_in_vectordb(self, collection_id: str, query: str, limit: int):
 
         # get collection name
-        collection_name = self.create_collection_name(project_id=Project.project_id)
+        collection_name = self.create_collection_name(collection_id=collection_id)
 
         # embed query
         query_vector = self.embedding_client.embed_text(text = query, document_type = DocumentTypeEnum.QUERY.value)
@@ -132,7 +130,7 @@ class NLPController(BaseController):
         retrieved_documents = self.vectordb_client.search_vectors(collection_name = collection_name,
                                                                   query_text = query, HyDE = HyDE,
                                                                   query_vector = query_vector, HyDE_vector = HyDE_vector,
-                                                                  limit= 5*limit)
+                                                                  limit= limit)
 
         # rerank
         reranked_documents = self.reranking_client.rerank(query = query,
@@ -143,10 +141,10 @@ class NLPController(BaseController):
         # return documents and tokens used while searching
         return reranked_documents, HyDE_prompt_tokens, HyDE_completion_tokens
     
-    def answer_rag_questions(self, Project: Project, query: str, limit: int, chat_history: list[dict] = None):
+    def answer_rag_questions(self, collection_id: str, query: str, limit: int, chat_history: list[dict] = None):
 
         # retrieve documents
-        retrieved_documents, search_prompt_tokens, search_completion_tokens = self.search_in_vectordb(Project=Project,
+        retrieved_documents, search_prompt_tokens, search_completion_tokens = self.search_in_vectordb(collection_id=collection_id,
                                                                                                       query=query, limit=limit)
 
         if not retrieved_documents:

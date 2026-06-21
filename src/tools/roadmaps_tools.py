@@ -44,7 +44,10 @@ def get_roadmap_details(ctx: RunContext[DatabaseDeps], roadmap_id: str) -> str:
     """
     Fetch the complete step-by-step roadmap structure, milestones, and details using its unique ID.
     Use this tool ONLY after finding the valid roadmap_id via list_all_roadmaps.
-    
+
+    This tool returns a structured document containing fields such as: 
+    _id, id, name, summary, provider, host, track, skills, tools, duration, courses_count, link, and courses_list.
+
     Args:
         roadmap_id: The unique string identifier of the roadmap (e.g., 'backend-eng', 'ai-ml').
     """
