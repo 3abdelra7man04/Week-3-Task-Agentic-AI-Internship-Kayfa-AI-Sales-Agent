@@ -29,8 +29,7 @@ if "messages" not in st.session_state:
 if "conv_state" not in st.session_state:
     st.session_state.conv_state = ConversationState()
 
-if "ticket_notified" not in st.session_state:
-    st.session_state.ticket_notified = False
+
 
 # ─── Welcome message (first load only) ───────────────────────────────────────
 if not st.session_state.messages:
@@ -38,16 +37,12 @@ if not st.session_state.messages:
     st.session_state.messages.append({"role": "assistant", "content": welcome})
     # Don't add to state.history — welcome is not part of real agent history
 
-# ─── Ticket saved banner ──────────────────────────────────────────────────────
-if st.session_state.conv_state.ticket_saved and not st.session_state.ticket_notified:
-    st.success(t("ticket_saved", lang))
-    st.session_state.ticket_notified = True
+
 
 # ─── Clear button ─────────────────────────────────────────────────────────────
 if st.button("🗑️ " + t("chat_clear", lang), key="clear_btn"):
     st.session_state.messages = []
     st.session_state.conv_state = ConversationState()
-    st.session_state.ticket_notified = False
     st.rerun()
 
 # ─── GPT-style chat CSS ───────────────────────────────────────────────────────
@@ -129,42 +124,8 @@ if user_input and user_input.strip():
     st.session_state.conv_state = new_state
     st.session_state.messages.append({"role": "assistant", "content": reply, "ts": ts})
 
-    if ticket_just_saved:
-        st.session_state.ticket_notified = False  # trigger banner on next render
-
     st.rerun()
 
-# ─── CRM ticket preview (shown after ticket is saved) ────────────────────────
-state = st.session_state.conv_state
-if state.ticket_saved and state.ticket:
-    ticket = state.ticket
-    label = "📋 تذكرة CRM المحفوظة" if lang == "ar" else "📋 Saved CRM Ticket"
-    with st.expander(label, expanded=False):
-        fields = {
-            "الاسم" if lang == "ar" else "Name":               ticket.name,
-            "رقم التواصل" if lang == "ar" else "Phone":        ticket.phone,
-            "المدينة" if lang == "ar" else "City":             ticket.city,
-            "اللهجة" if lang == "ar" else "Dialect":           ticket.dialect,
-            "الدورة" if lang == "ar" else "Course":            ticket.interested_courses,
-            "الهدف" if lang == "ar" else "Goal":               ticket.goal,
-            "المستوى" if lang == "ar" else "Level":            ticket.current_level,
-            "إشارات الشراء" if lang == "ar" else "Buy Signals": ticket.buy_signals,
-            "الاعتراضات" if lang == "ar" else "Objections":    ticket.objections,
-            "الملخص" if lang == "ar" else "Summary":           ticket.conversation_summary,
-            "الإجراء التالي" if lang == "ar" else "Next Action": ticket.next_action,
-            "الحالة" if lang == "ar" else "Status":            ticket.status,
-        }
-        rows = ""
-        for label_text, val in fields.items():
-            if val:
-                rows += f"""
-<div class="crm-row">
-  <div class="crm-label">{label_text}</div>
-  <div class="crm-value">{val}</div>
-</div>"""
-        st.markdown(
-            f'<div class="crm-card"><div class="crm-card-body">{rows}</div></div>',
-            unsafe_allow_html=True,
-        )
+
 
 page_footer(logo_base64)

@@ -22,6 +22,7 @@ from controllers.NLPController import NLPController
 class AgentDeps:
     db: Database | None = None
     nlp_controller: Optional[NLPController] = None
+    lead_id: str | None = None
 
 
 def _format_results(results) -> str:

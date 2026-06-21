@@ -1,43 +1,17 @@
-from pydantic import BaseModel, Field
-from datetime import datetime
-from typing import Any
+from pydantic import Field
 from pydantic_ai import RunContext
-from _mongo import save_ticket
-import random
 from pymongo.database import Database
 from dataclasses import dataclass
+from models.db_schemes import CRMTicket
+from models.CRMTicketsModel import CRMTicketsModel
+from datetime import datetime
 
 # ─── Agent Dependencies ───────────────────────────────────────────────────────
 
 @dataclass
 class AgentDeps:
     db: Database | None = None   # MongoDB database — may be None if offline
-
-# ─── CRM Ticket Model ─────────────────────────────────────────────────────────
-
-class CRMTicket(BaseModel):
-    lead_id: str = Field(
-        default_factory=lambda: f"LEAD-{datetime.now().year}-{random.randint(1000,9999):04d}"
-    )
-    status: str = "warm"          # hot | warm | cold
-    name: str = ""
-    phone: str = ""
-    city: str = ""
-    dialect: str = ""
-    interested_courses: str = ""
-    goal: str = ""
-    current_level: str = ""
-    buy_signals: str = ""
-    objections: str = ""
-    conversation_summary: str = ""
-    next_action: str = ""
-    created_at: datetime = Field(default_factory=datetime.now)
-    source: str = "chat"
-
-    def to_mongo_dict(self) -> dict[str, Any]:
-        d = self.model_dump()
-        d["lead_id"] = self.lead_id
-        return d
+    lead_id: str | None = None
 
 def save_crm_ticket(
     ctx: RunContext[AgentDeps],
@@ -45,7 +19,7 @@ def save_crm_ticket(
     phone: str,
     city: str,
     dialect: str,
-    interested_courses: str,
+    interested_products: str,
     goal: str,
     current_level: str,
     buy_signals: str,
@@ -53,6 +27,7 @@ def save_crm_ticket(
     conversation_summary: str,
     next_action: str,
     status: str,
+    created_at: datetime = datetime.now(),
 ) -> str:
     """
     Save a qualified lead as a CRM ticket to MongoDB.
@@ -63,7 +38,7 @@ def save_crm_ticket(
         name: اسم العميل
         phone: رقم الهاتف أو واتساب
         city: المدينة والدولة
-        dialect: اللهجة (مثل: العربية — اللهجة المصرية)
+        dialect: اللهجة التي يتحدث بها العميل (سواء كانت الإنجليزية، أو لهجة عربية محددة مثل اللهجة المصرية أو غيرها)
         interested_courses: الدورات محل الاهتمام
         goal: الهدف من الدراسة
         current_level: المستوى الحالي (مبتدئ / متوسط / متقدم)
@@ -74,11 +49,12 @@ def save_crm_ticket(
         status: تقييم العميل (hot / warm / cold)
     """
     ticket = CRMTicket(
+        lead_id=ctx.deps.lead_id,
         name=name,
         phone=phone,
         city=city,
         dialect=dialect,
-        interested_courses=interested_courses,
+        interested_products=interested_products,
         goal=goal,
         current_level=current_level,
         buy_signals=buy_signals,
@@ -86,8 +62,20 @@ def save_crm_ticket(
         conversation_summary=conversation_summary,
         next_action=next_action,
         status=status,
+        created_at=datetime.now(),
     )
-    success, msg = save_ticket(ticket.to_mongo_dict())
+    if ctx.deps.db is None:
+        return "⚠️ فشل الحفظ: قاعدة البيانات غير متصلة"
+        
+    try:
+        model = CRMTicketsModel(db_client=ctx.deps.db)
+        model.save_ticket(ticket)
+        success = True
+        msg = ""
+    except Exception as e:
+        success = False
+        msg = str(e)
+
     # Store on ctx so the caller can detect it
     ctx.deps.__dict__["_last_ticket"] = ticket
     if success:

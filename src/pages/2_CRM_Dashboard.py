@@ -10,8 +10,6 @@ import streamlit as st
 
 from utils.components import page_header, page_footer, get_base64_image, lang_toggle, t
 
-from _mock_data import MOCK_TICKETS
-from _mongo import get_tickets, is_connected
 
 logo_base64 = get_base64_image("kayfa logo.svg")
 
@@ -52,7 +50,7 @@ FIELD_LABELS = {
         "phone":              "رقم التواصل",
         "city":               "المدينة",
         "dialect":            "اللغة / اللهجة",
-        "interested_courses": "المنتجات محل الاهتمام",
+        "interested_products": "المنتجات محل الاهتمام",
         "goal":               "الهدف",
         "current_level":      "المستوى الحالي",
         "buy_signals":        "إشارات الشراء",
@@ -66,7 +64,7 @@ FIELD_LABELS = {
         "phone":              "Contact",
         "city":               "City",
         "dialect":            "Language / Dialect",
-        "interested_courses": "Interested Courses",
+        "interested_products": "Interested Courses",
         "goal":               "Goal",
         "current_level":      "Current Level",
         "buy_signals":        "Buy Signals",
@@ -79,7 +77,7 @@ FIELD_LABELS = {
 
 DISPLAY_FIELDS = [
     "name", "phone", "city", "dialect",
-    "interested_courses", "goal", "current_level",
+    "interested_products", "goal", "current_level",
     "buy_signals", "objections",
     "conversation_summary", "next_action", "created_at",
 ]
@@ -89,23 +87,43 @@ DISPLAY_FIELDS = [
 @st.cache_data(ttl=30)
 def load_tickets(status_filter: str, course_filter: str) -> tuple[list[dict], bool]:
     """Load tickets from MongoDB or fall back to mocks."""
-    connected = is_connected()
-    if connected:
-        tickets = get_tickets(
-            status=status_filter if status_filter != "all" else None,
-            course_keyword=course_filter if course_filter else None,
-        )
-        if tickets:
+    
+    # Get db connection from session state (pass it via st.session_state outside cache if possible, but accessing resources directly is ok for demo)
+    resources = st.session_state.resources
+    db = resources["db"]
+    
+    if db is not None:
+        try:
+            from models.CRMTicketsModel import CRMTicketsModel
+            model = CRMTicketsModel(db_client=db)
+            tickets_objs = model.get_all_tickets()
+            tickets = [t.model_dump() for t in tickets_objs]
+            # Apply filters manually since model.get_all_tickets() gets all
+            if status_filter and status_filter != "all":
+                tickets = [t for t in tickets if t.get("status") == status_filter]
+            if course_filter:
+                tickets = [t for t in tickets if course_filter.lower() in t.get("interested_products", "").lower()]
             return tickets, True
-    # Fallback: mocks
-    tickets = list(MOCK_TICKETS)
+        except Exception as e:
+            print(e)
+            
+        
     # Apply filters to mocks
     if status_filter and status_filter != "all":
         tickets = [t for t in tickets if t.get("status") == status_filter]
     if course_filter:
-        tickets = [t for t in tickets if course_filter.lower() in t.get("interested_courses", "").lower()]
+        tickets = [t for t in tickets if course_filter.lower() in t.get("interested_products", t.get("interested_courses", "")).lower()]
     return tickets, False
 
+
+# ─── Filters ──────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.header("Filters" if lang == "en" else "التصفية")
+    chosen_status = st.selectbox(
+        "Status" if lang == "en" else "الحالة",
+        ["all", "hot", "warm", "cold"]
+    )
+    course_filter = st.text_input("Course" if lang == "en" else "الدورة", value="")
 
 # ─── Load data ────────────────────────────────────────────────────────────────
 tickets, from_db = load_tickets(chosen_status, course_filter)
@@ -154,12 +172,12 @@ def render_ticket(ticket: dict, lang: str) -> str:
 
     # Header
     html = f"""
-<div class="crm-card">
-  <div class="crm-card-header">
-    <span class="lead-id">{lead_id}</span>
-    <span class="status-badge {badge_class}">{icon} {status_label} · {'عميل محتمل' if lang=='ar' else 'Lead'}</span>
+<div class="ticket-container">
+  <div class="ticket-header">
+    <span class="ticket-status">{status_label} · {'عميل محتمل' if lang=='ar' else 'Lead'}</span>
+    <span class="ticket-lead-id" style="direction: ltr;">{lead_id}</span>
   </div>
-  <div class="crm-card-body">
+  <div class="ticket-body">
 """
 
     for field in DISPLAY_FIELDS:
@@ -169,12 +187,11 @@ def render_ticket(ticket: dict, lang: str) -> str:
         if isinstance(val, datetime):
             val = val.strftime("%Y-%m-%d · %H:%M")
         label_text = labels.get(field, field)
-        extra_class = "crm-value-summary" if field in ("conversation_summary", "next_action") else "crm-value"
         html += f"""
-    <div class="crm-row">
-      <div class="crm-label">{label_text}</div>
-      <div class="{extra_class}">{val}</div>
-    </div>"""
+<div class="ticket-row">
+  <div class="ticket-label">{label_text}</div>
+  <div class="ticket-value">{val}</div>
+</div>"""
 
     html += "\n  </div>\n</div>"
     return html
@@ -188,12 +205,71 @@ if not tickets:
         unsafe_allow_html=True,
     )
 else:
-    # Two-column grid on wide screens
-    col_a, col_b = st.columns(2, gap="medium")
-    for i, ticket in enumerate(tickets):
-        target_col = col_a if i % 2 == 0 else col_b
-        with target_col:
-            st.markdown(render_ticket(ticket, lang), unsafe_allow_html=True)
+    # Inject CSS for the modern ticket UI
+    st.markdown("""
+    <style>
+    .ticket-container {
+        border: 1px solid #eaebf2;
+        border-radius: 12px;
+        background: #ffffff;
+        margin-bottom: 24px;
+        padding: 24px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        direction: rtl;
+    }
+    .ticket-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .ticket-lead-id {
+        background: #eef0ff;
+        color: #4652d3;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-family: monospace;
+        letter-spacing: 0.5px;
+    }
+    .ticket-status {
+        background: #fff0e5;
+        color: #c95126;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .ticket-row {
+        display: flex;
+        padding: 14px 16px;
+        border-bottom: 1px solid #f4f5f8;
+    }
+    .ticket-row:nth-child(even) {
+        background-color: #fbfbfc;
+    }
+    .ticket-row:last-child {
+        border-bottom: none;
+    }
+    .ticket-label {
+        flex: 0 0 160px;
+        color: #4652d3;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding-left: 16px;
+    }
+    .ticket-value {
+        flex: 1;
+        color: #33395c;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Full-width single column layout
+    for ticket in tickets:
+        st.markdown(render_ticket(ticket, lang), unsafe_allow_html=True)
 
 # ─── Footer ───────────────────────────────────────────────────────────────────
 st.markdown(

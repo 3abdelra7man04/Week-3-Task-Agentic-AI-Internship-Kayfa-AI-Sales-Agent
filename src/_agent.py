@@ -35,11 +35,17 @@ template_parser = resources["template_parser"]
 
 
 
+from datetime import datetime
+import random
+
 # ─── Conversation state (passed in/out of the chat() function) ───────────────
 class ConversationState(BaseModel):
     history: list[ModelMessage] = Field(default_factory=list)
     ticket_saved: bool = False
     ticket: CRMTicket | None = None
+    lead_id: str = Field(
+        default_factory=lambda: f"LEAD-{datetime.now().year}-{random.randint(1000,9999):04d}"
+    )
 
 
 from tools.semantic_search_tools import AgentDeps
@@ -66,7 +72,7 @@ def chat(
         template_parser=_resources["template_parser"],
         reranking_client=_resources["reranking_client"],
     )
-    deps = AgentDeps(db=db, nlp_controller=nlp_controller)
+    deps = AgentDeps(db=db, nlp_controller=nlp_controller, lead_id=state.lead_id)
 
     # Run the agent (with graceful error handling)
     try:
