@@ -30,7 +30,7 @@ def page_header(logo_b64, subtitle):
         <div style="display: flex; align-items: center; gap: 24px;">
             <img src="{logo_b64}" style="height: 95px; width: auto; object-fit: contain;" alt="Kayfa Logo">
             <div style="border-left: 1px solid var(--sidebar-border); padding-left: 24px;">
-                <div class="kayfa-tagline" style="font-size: 1.25rem; color: var(--text-color); font-weight: 600; margin-bottom: 4px;">Week #2 Task</div>
+                <div class="kayfa-tagline" style="font-size: 1.25rem; color: var(--text-color); font-weight: 600; margin-bottom: 4px;">Week #3 Task</div>
                 <div style="font-size: 0.85rem; color: var(--tagline-color); font-weight: 300; letter-spacing: 0.3px;">{subtitle}</div>
             </div>
         </div>
@@ -46,7 +46,7 @@ def page_footer(logo_b64):
     st.markdown(f"""
     <div style="text-align:center;padding:25px 0 12px;color:var(--tagline-color);font-size:0.75rem; display:flex; align-items:center; justify-content:center; gap:10px;">
         <img src="{logo_b64}" style="height: 24px; width: auto; object-fit: contain;" alt="Kayfa Logo">
-        <span>· Week #2 Task · © 2026 Kayfa Inc.</span>
+        <span>· Week #3 Task · © 2026 Kayfa Inc.</span>
     </div>
     """, unsafe_allow_html=True)
 

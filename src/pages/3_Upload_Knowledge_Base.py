@@ -4,6 +4,7 @@ from models.ChunkModel import ChunkModel
 from models.db_schemes import DataChunk
 from bson.objectid import ObjectId
 from controllers.NLPController import NLPController
+from utils.components import page_header, get_base64_image, page_footer
 
 
 # ─── resources ──────────────────────────────────────
@@ -18,7 +19,12 @@ embedding_client = resources["embedding_client"]
 vectordb_client = resources["vectordb_client"]
 reranking_client = resources["reranking_client"]
 
-st.title("📄 File Upload Dashboard")
+logo_base64 = get_base64_image("kayfa logo.svg")
+
+page_header(logo_base64, "Upload File Knowledge Base")
+
+st.title("📄 Upload File Knowledge Base")
+
 
 # Create the file uploader widget
 uploaded_file = st.file_uploader(
@@ -77,3 +83,7 @@ if uploaded_file is not None:
     
     if is_inserted:
         st.success(f"Successfully indexed: {uploaded_file.name}")
+
+    
+
+page_footer(logo_base64)

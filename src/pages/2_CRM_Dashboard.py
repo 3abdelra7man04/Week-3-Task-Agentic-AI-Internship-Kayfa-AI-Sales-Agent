@@ -15,6 +15,8 @@ logo_base64 = get_base64_image("kayfa logo.svg")
 
 page_header(logo_base64, "CRM Dashboard")
 
+st.title("📋 CRM Dashboard")
+
 # ── Path setup ────────────────────────────────────────────────────────────────
 _views_dir = pathlib.Path(__file__).parent.parent
 if str(_views_dir) not in sys.path:
@@ -206,24 +208,25 @@ if not tickets:
     )
 else:
     # Inject CSS for the modern ticket UI
-    st.markdown("""
+    padding_side = "left" if is_rtl else "right"
+    st.markdown(f"""
     <style>
-    .ticket-container {
+    .ticket-container {{
         border: 1px solid #eaebf2;
         border-radius: 12px;
         background: #ffffff;
         margin-bottom: 24px;
         padding: 24px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-        direction: rtl;
-    }
-    .ticket-header {
+        direction: {direction};
+    }}
+    .ticket-header {{
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 20px;
-    }
-    .ticket-lead-id {
+    }}
+    .ticket-lead-id {{
         background: #eef0ff;
         color: #4652d3;
         padding: 6px 14px;
@@ -231,39 +234,40 @@ else:
         font-size: 0.85rem;
         font-family: monospace;
         letter-spacing: 0.5px;
-    }
-    .ticket-status {
+    }}
+    .ticket-status {{
         background: #fff0e5;
         color: #c95126;
         padding: 6px 16px;
         border-radius: 20px;
         font-size: 0.85rem;
         font-weight: 600;
-    }
-    .ticket-row {
+    }}
+    .ticket-row {{
         display: flex;
         padding: 14px 16px;
         border-bottom: 1px solid #f4f5f8;
-    }
-    .ticket-row:nth-child(even) {
+    }}
+    .ticket-row:nth-child(even) {{
         background-color: #fbfbfc;
-    }
-    .ticket-row:last-child {
+    }}
+    .ticket-row:last-child {{
         border-bottom: none;
-    }
-    .ticket-label {
+    }}
+    .ticket-label {{
         flex: 0 0 160px;
         color: #4652d3;
         font-weight: 700;
         font-size: 0.95rem;
-        padding-left: 16px;
-    }
-    .ticket-value {
+        padding-{padding_side}: 16px;
+    }}
+    .ticket-value {{
         flex: 1;
         color: #33395c;
         font-size: 0.95rem;
         line-height: 1.6;
-    }
+        text-align: {text_align};
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -272,16 +276,5 @@ else:
         st.markdown(render_ticket(ticket, lang), unsafe_allow_html=True)
 
 # ─── Footer ───────────────────────────────────────────────────────────────────
-st.markdown(
-    f"""
-<div style="text-align:center;color:#8890b5;font-size:0.78rem;padding:2rem 0 0.5rem;
-     direction:{direction};">
-    {'كيفا للتدريب التقني — لوحة إدارة العملاء المحتملين © 2026'
-     if lang=='ar' else
-     'Kayfa Tech Training — CRM Lead Dashboard © 2026'}
-</div>
-""",
-    unsafe_allow_html=True,
-)
 
 page_footer(logo_base64)

@@ -94,6 +94,28 @@ def get_global_resources():
 if "resources" not in st.session_state:
     st.session_state.resources = get_global_resources()
 
+# ─── Simple Login ─────────────────────────────────────────────────────────────
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown(f'<div style="text-align: center; margin-bottom: 1rem; margin-top: 5rem;"><img src="{logo_base64}" style="height: 120px; object-fit: contain;"></div>', unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; color: #1a1d3a; font-family: Tajawal, sans-serif; margin-bottom: 2rem;'>تسجيل الدخول | Login</h2>", unsafe_allow_html=True)
+        
+        with st.form("login_form"):
+            username = st.text_input("Username", placeholder="admin")
+            password = st.text_input("Password", type="password", placeholder="password")
+            submit = st.form_submit_button("Login", type="primary", use_container_width=True)
+            
+            if submit:
+                if username.lower() == "admin@kayfa.com" and password == "kayfa1234":
+                    st.session_state.logged_in = True
+                    st.rerun()
+                else:
+                    st.error("Invalid credentials. Hint: use admin / admin")
+    st.stop()
 
 # ══════════════════════════════════════════════════════════════════════════════
 # NAVIGATION ROUTING (Must be initialized before st.page_link is called)
@@ -101,9 +123,9 @@ if "resources" not in st.session_state:
 
 pages = {
     "Dashboard": [
-        st.Page("pages/1_Sales_Agent.py", title="📊 Sales Agent"),
-        st.Page("pages/2_CRM_Dashboard.py", title="📈 CRM Dashboard"),
-        st.Page("pages/3_Upload_Knowledge_Base.py", title="Upload Knowledge Base")
+        st.Page("pages/1_Sales_Agent.py", title="🤖 Sales Agent"),
+        st.Page("pages/2_CRM_Dashboard.py", title="📋 CRM Dashboard"),
+        st.Page("pages/3_Upload_Knowledge_Base.py", title="📄 Upload Knowledge Base")
     ]
 }
 
@@ -124,9 +146,9 @@ with st.sidebar:
     st.markdown("---")
     st.markdown('<div class="sidebar-section">Navigation</div>', unsafe_allow_html=True)
     
-    st.page_link("pages/1_Sales_Agent.py", label="Sales Agent", icon="📊")
-    st.page_link("pages/2_CRM_Dashboard.py", label="CRM Dashboard", icon="📈")
-    st.page_link("pages/3_Upload_Knowledge_Base.py", label="Upload Knowledge Base", icon="📈")
+    st.page_link("pages/1_Sales_Agent.py", label="Sales Agent", icon="🤖")
+    st.page_link("pages/2_CRM_Dashboard.py", label="CRM Dashboard", icon="📋")
+    st.page_link("pages/3_Upload_Knowledge_Base.py", label="Upload Knowledge Base", icon="📄")
     
 
 
@@ -136,5 +158,5 @@ pg.run()
 
 with st.sidebar:
     st.markdown("---")
-    st.markdown('<div style="font-size:0.72rem;color:var(--tagline-color);">📊 Based on MongoDB Atlas data<br>generated for Kayfa exploratory analysis.</div>',
+    st.markdown('<div style="font-size:0.72rem;color:var(--tagline-color);">📊 Based on MongoDB Atlas data<br>for Kayfa Sales Agent.</div>',
                 unsafe_allow_html=True)

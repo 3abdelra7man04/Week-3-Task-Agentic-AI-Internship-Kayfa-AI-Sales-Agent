@@ -17,7 +17,9 @@ st.set_page_config(
 )
 
 logo_base64 = get_base64_image("kayfa logo.svg")
-page_header(logo_base64, "وكيل مبيعات كيفا | Kayfa Sales Agent")
+page_header(logo_base64, "وكيل مبيعات كيف | Kayfa Sales Agent")
+
+st.title("🤖 Kayfa Sales Agent")
 
 # ─── Language toggle ──────────────────────────────────────────────────────────
 lang = lang_toggle(default="ar")
@@ -31,13 +33,6 @@ if "conv_state" not in st.session_state:
 
 
 
-# ─── Welcome message (first load only) ───────────────────────────────────────
-if not st.session_state.messages:
-    welcome = t("chat_welcome", lang)
-    st.session_state.messages.append({"role": "assistant", "content": welcome})
-    # Don't add to state.history — welcome is not part of real agent history
-
-
 
 # ─── Clear button ─────────────────────────────────────────────────────────────
 if st.button("🗑️ " + t("chat_clear", lang), key="clear_btn"):
@@ -46,9 +41,12 @@ if st.button("🗑️ " + t("chat_clear", lang), key="clear_btn"):
     st.rerun()
 
 # ─── GPT-style chat CSS ───────────────────────────────────────────────────────
-st.markdown("""
+css_direction = "rtl" if lang == "ar" else "ltr"
+css_text_align = "right" if lang == "ar" else "left"
+
+st.markdown(f"""
 <style>
-[data-testid="stChatMessage"] {
+[data-testid="stChatMessage"] {{
     background: #ffffff;
     border: 1px solid #e2e4f3;
     border-radius: 14px;
@@ -56,35 +54,49 @@ st.markdown("""
     margin-bottom: 0.6rem;
     box-shadow: 0 2px 8px rgba(70,82,211,0.06);
     transition: box-shadow 0.2s;
-}
-[data-testid="stChatMessage"]:hover {
+    direction: {css_direction};
+}}
+[data-testid="stChatMessage"]:hover {{
     box-shadow: 0 4px 16px rgba(70,82,211,0.12);
-}
-[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
+}}
+[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {{
     background: #eef0ff;
     border-color: #c5caff;
-}
+}}
 [data-testid="stChatMessageContent"] p,
 [data-testid="stChatMessageContent"] li,
-[data-testid="stChatMessageContent"] strong {
-    direction: rtl;
-    text-align: right;
+[data-testid="stChatMessageContent"] strong,
+[data-testid="stChatMessageContent"] h1,
+[data-testid="stChatMessageContent"] h2,
+[data-testid="stChatMessageContent"] h3,
+[data-testid="stChatMessageContent"] h4,
+[data-testid="stChatMessageContent"] h5,
+[data-testid="stChatMessageContent"] h6,
+[data-testid="stChatMessageContent"] span,
+[data-testid="stChatMessageContent"] a {{
+    text-align: {css_text_align};
     font-family: 'Tajawal', 'Inter', sans-serif;
     font-size: 0.97rem;
     line-height: 1.75;
-    color: #1a1d3a;
-}
-[data-testid="stChatMessageAvatarContainer"] { align-self: flex-start; }
-[data-testid="stChatInput"] {
+    color: #1a1d3a !important;
+}}
+[data-testid="stChatMessageContent"] code {{
+    color: #d83b6f !important;
+    background-color: #f1f3f8 !important;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+}}
+[data-testid="stChatMessageAvatarContainer"] {{ align-self: flex-start; }}
+[data-testid="stChatInput"] {{
     border-radius: 12px !important;
     border: 1.5px solid #e2e4f3 !important;
     font-family: 'Tajawal', sans-serif !important;
-    direction: rtl !important;
-}
-[data-testid="stChatInput"]:focus-within {
+    direction: {css_direction} !important;
+}}
+[data-testid="stChatInput"]:focus-within {{
     border-color: #4652d3 !important;
     box-shadow: 0 0 0 3px rgba(70,82,211,0.12) !important;
-}
+}}
 </style>
 """, unsafe_allow_html=True)
 
