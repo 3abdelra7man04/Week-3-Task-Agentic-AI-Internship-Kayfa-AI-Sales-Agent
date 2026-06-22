@@ -114,7 +114,7 @@ if not st.session_state.logged_in:
                     st.session_state.logged_in = True
                     st.rerun()
                 else:
-                    st.error("Invalid credentials. Hint: use admin / admin")
+                    st.error("Invalid credentials")
     st.stop()
 
 # ══════════════════════════════════════════════════════════════════════════════
