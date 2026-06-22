@@ -2,3 +2,4 @@ data
 .venv_eval
 .deepeval
 eval
+.env
