@@ -39,7 +39,12 @@ logo_base64 = get_base64_image("kayfa logo.svg")
 @st.cache_resource
 def get_global_resources():
     load_dotenv()
-    settings = get_settings() # Grab your project settings
+    try:
+        from helpers.config import Settings
+        settings_dict = dict(st.secrets)
+        settings = Settings(**settings_dict)
+    except Exception:
+        settings = get_settings() # Grab your project settings
     
     # Initialize MongoDB Client
     client = MongoClient(settings.MONGODB_URL)
