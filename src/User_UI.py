@@ -83,7 +83,7 @@ def get_global_resources():
 
     # create agent client
     agent_client = Agent(
-        model = "openrouter:google/gemini-3-flash-preview",
+        model = "openrouter:openai/gpt-5-mini",
         deps_type = AgentDeps,
         system_prompt = template_parser.get("rag", "system_prompt"),
         tools=tools,
