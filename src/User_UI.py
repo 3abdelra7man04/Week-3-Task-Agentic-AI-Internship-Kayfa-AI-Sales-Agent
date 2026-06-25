@@ -99,6 +99,9 @@ def get_global_resources():
 if "resources" not in st.session_state:
     st.session_state.resources = get_global_resources()
 
+from handlers.user import login, register, get_profile
+from models.enums.ResponseEnums import ResponseSignal
+
 # ─── Simple Login ─────────────────────────────────────────────────────────────
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -107,19 +110,39 @@ if not st.session_state.logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown(f'<div style="text-align: center; margin-bottom: 1rem; margin-top: 5rem;"><img src="{logo_base64}" style="height: 120px; object-fit: contain;"></div>', unsafe_allow_html=True)
-        st.markdown("<h2 style='text-align: center; color: #1a1d3a; font-family: Tajawal, sans-serif; margin-bottom: 2rem;'>تسجيل الدخول | Login</h2>", unsafe_allow_html=True)
         
-        with st.form("login_form"):
-            username = st.text_input("Username", placeholder="admin")
-            password = st.text_input("Password", type="password", placeholder="password")
-            submit = st.form_submit_button("Login", type="primary", use_container_width=True)
-            
-            if submit:
-                if username.lower() == "admin@kayfa.com" and password == "kayfa1234":
-                    st.session_state.logged_in = True
-                    st.rerun()
-                else:
-                    st.error("Invalid credentials")
+        tab1, tab2 = st.tabs(["Login", "Sign Up"])
+        
+        with tab1:
+            st.markdown("<h2 style='text-align: center; color: #1a1d3a; font-family: Tajawal, sans-serif; margin-bottom: 2rem;'>تسجيل الدخول | Login</h2>", unsafe_allow_html=True)
+            with st.form("login_form"):
+                email = st.text_input("Email", placeholder="user@kayfa.com")
+                password = st.text_input("Password", type="password", placeholder="password")
+                submit = st.form_submit_button("Login", type="primary", use_container_width=True)
+                
+                if submit:
+                    res = login(st.session_state.resources["db"], {"email": email, "password": password})
+                    if res.get("signal") == ResponseSignal.LOGIN_SUCCESS.value:
+                        st.session_state.logged_in = True
+                        st.session_state.user_id = res.get("user_id")
+                        st.rerun()
+                    else:
+                        st.error("Invalid credentials")
+                        
+        with tab2:
+            st.markdown("<h2 style='text-align: center; color: #1a1d3a; font-family: Tajawal, sans-serif; margin-bottom: 2rem;'>إنشاء حساب | Sign Up</h2>", unsafe_allow_html=True)
+            with st.form("signup_form"):
+                new_name = st.text_input("Full Name", placeholder="John Doe")
+                new_email = st.text_input("Email", placeholder="user@kayfa.com")
+                new_password = st.text_input("Password", type="password", placeholder="password")
+                signup_submit = st.form_submit_button("Sign Up", type="primary", use_container_width=True)
+                
+                if signup_submit:
+                    res = register(st.session_state.resources["db"], {"name": new_name, "email": new_email, "password": new_password})
+                    if res.get("signal") == ResponseSignal.USER_REGISTER_SUCCESS.value:
+                        st.success("Registration successful! Please login.")
+                    else:
+                        st.error(res.get("signal"))
     st.stop()
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -162,6 +185,27 @@ with st.sidebar:
 pg.run()
 
 with st.sidebar:
+    st.markdown("---")
+    if "user_id" in st.session_state:
+        profile_res = get_profile(st.session_state.resources["db"], st.session_state.user_id)
+        if profile_res.get("signal") == ResponseSignal.PROFILE_FOUND.value:
+            user_data = profile_res.get("userData", {})
+            user_name = user_data.get('user_name', 'User').strip()
+            parts = user_name.split()
+            initials = (parts[0][0] + parts[-1][0]).upper() if len(parts) > 1 else user_name[:2].upper()
+            
+            profile_html = f"""
+            <div style="display: flex; align-items: center; gap: 15px; padding: 12px; background-color: var(--secondary-background-color, #ffffff); border-radius: 12px; border: 1px solid rgba(128, 128, 128, 0.2); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); margin-bottom: 10px;">
+                <div style="min-width: 48px; min-height: 48px; border-radius: 50%; background: linear-gradient(135deg, #5e68e0, #4652d3); display: flex; justify-content: center; align-items: center; color: white; font-weight: 800; font-size: 18px; box-shadow: 0 4px 6px -1px rgba(70, 82, 211, 0.3);">
+                    {initials}
+                </div>
+                <div style="display: flex; flex-direction: column; overflow: hidden; justify-content: center;">
+                    <span style="font-weight: 700; color: var(--text-color, #1e293b); font-size: 16px; font-family: 'Syne', 'Inter', Tajawal, sans-serif; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">{user_name}</span>
+                </div>
+            </div>
+            """
+            st.markdown(profile_html, unsafe_allow_html=True)
+
     st.markdown("---")
     st.markdown('<div style="font-size:0.72rem;color:var(--tagline-color);">📊 Based on MongoDB Atlas data<br>for Kayfa Sales Agent.</div>',
                 unsafe_allow_html=True)
