@@ -125,6 +125,7 @@ if not st.session_state.logged_in:
                     if res.get("signal") == ResponseSignal.LOGIN_SUCCESS.value:
                         st.session_state.logged_in = True
                         st.session_state.user_id = res.get("user_id")
+                        st.session_state.user_role = res.get("user_role", "user")
                         st.rerun()
                     else:
                         st.error("Invalid credentials")
@@ -135,10 +136,11 @@ if not st.session_state.logged_in:
                 new_name = st.text_input("Full Name", placeholder="John Doe")
                 new_email = st.text_input("Email", placeholder="user@kayfa.com")
                 new_password = st.text_input("Password", type="password", placeholder="password")
+                new_role = st.selectbox("Role", ["user", "admin"])
                 signup_submit = st.form_submit_button("Sign Up", type="primary", use_container_width=True)
                 
                 if signup_submit:
-                    res = register(st.session_state.resources["db"], {"name": new_name, "email": new_email, "password": new_password})
+                    res = register(st.session_state.resources["db"], {"name": new_name, "email": new_email, "password": new_password, "role": new_role})
                     if res.get("signal") == ResponseSignal.USER_REGISTER_SUCCESS.value:
                         st.success("Registration successful! Please login.")
                     else:
@@ -149,12 +151,19 @@ if not st.session_state.logged_in:
 # NAVIGATION ROUTING (Must be initialized before st.page_link is called)
 # ══════════════════════════════════════════════════════════════════════════════
 
-pages = {
-    "Dashboard": [
-        st.Page("pages/1_Sales_Agent.py", title="🤖 Sales Agent"),
+user_role = st.session_state.get("user_role", "user")
+
+dashboard_pages = [st.Page("pages/1_Sales_Agent.py", title="🤖 Sales Agent")]
+
+if user_role == "admin":
+    dashboard_pages.extend([
         st.Page("pages/2_CRM_Dashboard.py", title="📋 CRM Dashboard"),
-        st.Page("pages/3_Upload_Knowledge_Base.py", title="📄 Upload Knowledge Base")
-    ]
+        st.Page("pages/3_Upload_Knowledge_Base.py", title="📄 Upload Knowledge Base"),
+        st.Page("pages/4_Admin_Dashboard.py", title="🛡️ Admin Dashboard")
+    ])
+
+pages = {
+    "Dashboard": dashboard_pages
 }
 
 pg = st.navigation(pages, position="hidden")
@@ -175,8 +184,10 @@ with st.sidebar:
     st.markdown('<div class="sidebar-section">Navigation</div>', unsafe_allow_html=True)
     
     st.page_link("pages/1_Sales_Agent.py", label="Sales Agent", icon="🤖")
-    st.page_link("pages/2_CRM_Dashboard.py", label="CRM Dashboard", icon="📋")
-    st.page_link("pages/3_Upload_Knowledge_Base.py", label="Upload Knowledge Base", icon="📄")
+    if user_role == "admin":
+        st.page_link("pages/2_CRM_Dashboard.py", label="CRM Dashboard", icon="📋")
+        st.page_link("pages/3_Upload_Knowledge_Base.py", label="Upload Knowledge Base", icon="📄")
+        st.page_link("pages/4_Admin_Dashboard.py", label="Admin Dashboard", icon="🛡️")
     
 
 
@@ -191,6 +202,7 @@ with st.sidebar:
         if profile_res.get("signal") == ResponseSignal.PROFILE_FOUND.value:
             user_data = profile_res.get("userData", {})
             user_name = user_data.get('user_name', 'User').strip()
+            user_role = user_data.get('user_role', 'user').capitalize()
             parts = user_name.split()
             initials = (parts[0][0] + parts[-1][0]).upper() if len(parts) > 1 else user_name[:2].upper()
             
@@ -201,11 +213,24 @@ with st.sidebar:
                 </div>
                 <div style="display: flex; flex-direction: column; overflow: hidden; justify-content: center;">
                     <span style="font-weight: 700; color: var(--text-color, #1e293b); font-size: 16px; font-family: 'Syne', 'Inter', Tajawal, sans-serif; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">{user_name}</span>
+                    <span style="font-size: 12px; color: #64748b; font-family: 'Inter', Tajawal, sans-serif; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">{user_role}</span>
                 </div>
             </div>
             """
-            st.markdown(profile_html, unsafe_allow_html=True)
-
+            col1, col2 = st.columns([5, 1])
+            with col1:
+                st.markdown(profile_html, unsafe_allow_html=True)
+            with col2:
+                st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+                if st.button("🚪", key="signout_btn", help="Sign Out", use_container_width=True):
+                    st.session_state["logged_in"] = False
+                    if "user_id" in st.session_state:
+                        del st.session_state["user_id"]
+                    if "current_chat_id" in st.session_state:
+                        st.session_state["current_chat_id"] = None
+                    if "messages" in st.session_state:
+                        st.session_state["messages"] = []
+                    st.rerun()
     st.markdown("---")
     st.markdown('<div style="font-size:0.72rem;color:var(--tagline-color);">📊 Based on MongoDB Atlas data<br>for Kayfa Sales Agent.</div>',
                 unsafe_allow_html=True)

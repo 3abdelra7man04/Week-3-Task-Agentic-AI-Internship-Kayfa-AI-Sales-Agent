@@ -1,11 +1,11 @@
 import streamlit as st
 from langchain.text_splitter import MarkdownHeaderTextSplitter
 from models.ChunkModel import ChunkModel
-from models.db_schemes import DataChunk
+from models.AssetModel import AssetModel
+from models.db_schemes import DataChunk, Asset
 from bson.objectid import ObjectId
 from controllers.NLPController import NLPController
 from utils.components import page_header, get_base64_image, page_footer
-
 
 # ─── resources ──────────────────────────────────────
 
@@ -35,6 +35,15 @@ uploaded_file = st.file_uploader(
 if uploaded_file is not None:
     # Read the file content as bytes, then decode to string
     file_content = uploaded_file.read().decode("utf-8")
+
+    asset_model = AssetModel.create_instance(db_client=db)
+
+    asset = Asset(
+        asset_name=uploaded_file.name,
+        asset_content=file_content
+    )
+
+    asset_model.add_asset(asset)
     st.success(f"Successfully uploaded: {uploaded_file.name}")
     # Optional: Preview the uploaded content in an expander box
 

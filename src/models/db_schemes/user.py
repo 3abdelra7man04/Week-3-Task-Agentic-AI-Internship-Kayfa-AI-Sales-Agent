@@ -7,6 +7,7 @@ class User(BaseModel):
     user_name: str
     user_email: EmailStr
     user_password: str
+    user_role: str = Field(default="user")
     user_image: Optional[str] = ""
 
 

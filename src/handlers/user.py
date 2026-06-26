@@ -9,7 +9,8 @@ def register(db_client, registered_user: dict):
     user = User(
         user_name = registered_user["name"],
         user_password = registered_user["password"],
-        user_email= registered_user["email"]
+        user_email= registered_user["email"],
+        user_role= registered_user.get("role", "user")
     )
 
     # user model instance
@@ -33,7 +34,8 @@ def login(db_client, credentials: dict):
     # user found
     if user and user.user_password == credentials["password"]:
         return {"signal": ResponseSignal.LOGIN_SUCCESS.value,
-                "user_id": str(user.id)}
+                "user_id": str(user.id),
+                "user_role": getattr(user, 'user_role', 'user')}
     
     return {"signal": ResponseSignal.LOGIN_FAILED.value}
 

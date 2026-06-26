@@ -60,4 +60,9 @@ class UserModel(BaseDataModel):
             return User(**user)
         else:
             return None
+            
+    # get all users
+    def get_all_users(self):
+        users = self.collection.find({})
+        return [User(**user) for user in users]
         

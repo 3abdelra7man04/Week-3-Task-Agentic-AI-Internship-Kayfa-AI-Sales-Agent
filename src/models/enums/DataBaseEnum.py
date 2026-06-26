@@ -6,3 +6,5 @@ class DataBaseEnum(Enum):
     CRM_TICKETS_COLLECTION_NAME = "crm_ticket"
     PROJECT_COLLECTION_NAME = "projects"
     USERS_COLLECTION_NAME = "users"
+    CHATS_COLLECTION_NAME = "chats"
+    ASSETS_COLLECTION_NAME = "assets"

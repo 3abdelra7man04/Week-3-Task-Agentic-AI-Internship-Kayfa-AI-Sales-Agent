@@ -7,6 +7,9 @@ import time
 import streamlit as st
 from utils.components import page_header, page_footer, get_base64_image, lang_toggle, t
 from _agent import ConversationState, chat
+from handlers.chat import create_chat, update_chat, list_chats, get_chat, delete_chat, rename_chat
+from pydantic import TypeAdapter
+from pydantic_ai.messages import ModelMessage
 
 # ─── Page config ─────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -31,14 +34,58 @@ if "messages" not in st.session_state:
 if "conv_state" not in st.session_state:
     st.session_state.conv_state = ConversationState()
 
+if "current_chat_id" not in st.session_state:
+    st.session_state.current_chat_id = None
 
+db_client = st.session_state.resources["db"]
+user_id = st.session_state.get("user_id", None)
 
-
-# ─── Clear button ─────────────────────────────────────────────────────────────
-if st.button("🗑️ " + t("chat_clear", lang), key="clear_btn"):
-    st.session_state.messages = []
-    st.session_state.conv_state = ConversationState()
-    st.rerun()
+# ─── Sidebar Chat History ─────────────────────────────────────────────────────
+with st.sidebar:
+    st.title("💬 سجل المحادثات" if lang == "ar" else "💬 Chat History")
+    
+    if st.button("➕ محادثة جديدة" if lang == "ar" else "➕ New Chat", use_container_width=True):
+        st.session_state.messages = []
+        st.session_state.conv_state = ConversationState()
+        st.session_state.current_chat_id = None
+        st.rerun()
+    
+    st.divider()
+    
+    if user_id:
+        past_chats = list_chats(db_client, user_id)
+        for c in past_chats:
+            c_id = c["_id"]
+            c_title = c.get("chat_title") or "New Chat"
+            
+            with st.expander(c_title, expanded=False):
+                if st.button("فتح" if lang == "ar" else "Load", key=f"load_{c_id}", use_container_width=True):
+                    st.session_state.current_chat_id = c_id
+                    chat_data = get_chat(db_client, c_id)
+                    if chat_data:
+                        parsed_history = TypeAdapter(list[ModelMessage]).validate_python(chat_data.chat_history)
+                        st.session_state.conv_state = ConversationState(history=parsed_history)
+                        st.session_state.messages = []
+                        for msg in chat_data.chat_conversation:
+                            st.session_state.messages.append({"role": "user", "content": msg["question"], "ts": ""})
+                            st.session_state.messages.append({"role": "assistant", "content": msg["answer"], "ts": ""})
+                        st.rerun()
+                
+                new_title = st.text_input("تغيير الاسم" if lang == "ar" else "Rename", key=f"rename_input_{c_id}")
+                if st.button("حفظ" if lang == "ar" else "Save", key=f"rename_btn_{c_id}"):
+                    if new_title.strip():
+                        rename_chat(db_client, c_id, new_title.strip())
+                        st.rerun()
+                
+                if st.button("حذف" if lang == "ar" else "Delete", key=f"delete_{c_id}"):
+                    delete_chat(db_client, c_id)
+                    if st.session_state.current_chat_id == c_id:
+                        st.session_state.current_chat_id = None
+                        st.session_state.messages = []
+                        st.session_state.conv_state = ConversationState()
+                    st.rerun()
+    else:
+        st.info("قم بتسجيل الدخول لرؤية سجل محادثاتك" if lang == "ar" else "Log in to see your chat history.")
 
 # ─── GPT-style chat CSS ───────────────────────────────────────────────────────
 css_direction = "rtl" if lang == "ar" else "ltr"
@@ -135,6 +182,15 @@ if user_input and user_input.strip():
     # Persist results
     st.session_state.conv_state = new_state
     st.session_state.messages.append({"role": "assistant", "content": reply, "ts": ts})
+
+    # Save to MongoDB
+    chat_history = TypeAdapter(list).dump_python(new_state.history, mode='json')
+    if st.session_state.current_chat_id is None:
+        title = user_input[:30]
+        c_id = create_chat(db_client, user_id, title, chat_history, [{"question": user_input, "answer": reply}])
+        st.session_state.current_chat_id = c_id
+    else:
+        update_chat(db_client, st.session_state.current_chat_id, chat_history, user_input, reply)
 
     st.rerun()
 
