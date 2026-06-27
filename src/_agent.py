@@ -12,6 +12,7 @@ from pymongo.database import Database
 from tools.crm_tools import CRMTicket
 from pydantic_ai.messages import ModelMessage
 from controllers.NLPController import NLPController
+from models.AssetModel import AssetModel
 import traceback
 from pydantic_ai.messages import ToolReturnPart, ToolCallPart, ModelResponse
 
@@ -48,7 +49,7 @@ class ConversationState(BaseModel):
     )
 
 
-from tools.semantic_search_tools import AgentDeps
+from tools.text_search_tools import AgentDeps
 
 
 
@@ -72,7 +73,11 @@ def chat(
         template_parser=_resources["template_parser"],
         reranking_client=_resources["reranking_client"],
     )
-    deps = AgentDeps(db=db, nlp_controller=nlp_controller, lead_id=state.lead_id)
+    asset_model = AssetModel.create_instance(db)
+    
+    user_name = st.session_state.get("user_name", "User")
+
+    deps = AgentDeps(db=db, nlp_controller=nlp_controller, lead_id=state.lead_id, asset_model=asset_model, user_name=user_name)
 
     # Run the agent (with graceful error handling)
     try:
@@ -86,17 +91,6 @@ def chat(
         state.history = result.all_messages()
         print_tools_called_with_results(result)
     except ExceptionGroup as eg:
-        # err_str = str(exc)
-        # if "401" in err_str or "auth" in err_str.lower() or "api_key" in err_str.lower():
-        #     reply = (
-        #         "⚠️ خطأ في المصادقة مع نموذج الذكاء الاصطناعي.\n\n"
-        #         "يرجى التحقق من صحة `OPENAI_API_KEY` في ملف `.env`.\n\n"
-        #         f"_تفاصيل: {err_str[:200]}_"
-        #     )
-        # else:
-        #     reply = (
-        #         f"⚠️ حدث خطأ أثناء معالجة طلبك:\n\n_{err_str[:300]}_"
-        #     )
         print(f"Caught ExceptionGroup with {len(eg.exceptions)} errors:")
         for i, exc in enumerate(eg.exceptions, 1):
             print(f"\n--- Sub-Exception {i} ---")

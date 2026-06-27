@@ -35,7 +35,8 @@ def login(db_client, credentials: dict):
     if user and user.user_password == credentials["password"]:
         return {"signal": ResponseSignal.LOGIN_SUCCESS.value,
                 "user_id": str(user.id),
-                "user_role": getattr(user, 'user_role', 'user')}
+                "user_role": getattr(user, 'user_role', 'user'),
+                "user_name": getattr(user, 'user_name', 'User')}
     
     return {"signal": ResponseSignal.LOGIN_FAILED.value}
 

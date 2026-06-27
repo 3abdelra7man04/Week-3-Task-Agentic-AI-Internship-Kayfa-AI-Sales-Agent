@@ -16,6 +16,7 @@ from tools.courses_tools import list_all_courses_summaries, get_course_details
 from tools.roadmaps_tools import list_all_roadmaps, get_roadmap_details
 from tools.crm_tools import save_crm_ticket
 from tools.semantic_search_tools import semantic_tools_list
+from tools.text_search_tools import text_tools_list
 from controllers.NLPController import NLPController
 from typing import Optional
 
@@ -73,17 +74,17 @@ def get_global_resources():
     # template parser
     template_parser = TemplateParser(language=settings.PRIMARY_LANG, default_language=settings.DEFAULT_LANG)
     
-    from tools.semantic_search_tools import AgentDeps
+    from tools.text_search_tools import AgentDeps
     
     # toolset
     tools = [
         list_all_courses_summaries, get_course_details, 
         get_roadmap_details, list_all_roadmaps, save_crm_ticket
-    ] + semantic_tools_list
+    ] + text_tools_list
 
     # create agent client
     agent_client = Agent(
-        model = "openrouter:openai/gpt-5-mini",
+        model = "openrouter:google/gemini-3.1-flash-lite",
         deps_type = AgentDeps,
         system_prompt = template_parser.get("rag", "system_prompt"),
         tools=tools,
@@ -126,6 +127,7 @@ if not st.session_state.logged_in:
                         st.session_state.logged_in = True
                         st.session_state.user_id = res.get("user_id")
                         st.session_state.user_role = res.get("user_role", "user")
+                        st.session_state.user_name = res.get("user_name", "User")
                         st.rerun()
                     else:
                         st.error("Invalid credentials")
