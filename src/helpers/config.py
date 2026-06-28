@@ -60,4 +60,14 @@ class Settings(BaseSettings):
         env_file = ".env"       # .env path described for the BaseSettings class
 
 def get_settings():
+    # Bridge Streamlit secrets → environment variables for cloud deployment
+    # (locally, .env is used instead; this is a no-op if st.secrets is empty)
+    import os
+    try:
+        import streamlit as st
+        for key, value in st.secrets.items():
+            if key not in os.environ:
+                os.environ[key] = str(value)
+    except Exception:
+        pass  # Not running in Streamlit, or no secrets configured
     return Settings()
