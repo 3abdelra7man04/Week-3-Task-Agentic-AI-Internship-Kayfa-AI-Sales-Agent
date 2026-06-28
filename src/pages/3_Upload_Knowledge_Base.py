@@ -1,5 +1,6 @@
 import streamlit as st
-from langchain.text_splitter import MarkdownHeaderTextSplitter
+# from langchain.text_splitter import MarkdownHeaderTextSplitter
+from langchain_text_splitters import MarkdownHeaderTextSplitter
 from models.ChunkModel import ChunkModel
 from models.AssetModel import AssetModel
 from models.db_schemes import DataChunk, Asset
