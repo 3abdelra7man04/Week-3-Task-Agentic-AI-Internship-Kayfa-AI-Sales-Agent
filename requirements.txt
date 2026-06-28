@@ -1,3 +1,4 @@
+pydantic-ai
 python-multipart==0.0.9
 python-dotenv==1.0.1
 pydantic-settings==2.2.1
@@ -14,4 +15,3 @@ cohere==5.20.7
 qdrant-client==1.17.1
 fastembed==0.8.0
 streamlit
-pydantic-ai
