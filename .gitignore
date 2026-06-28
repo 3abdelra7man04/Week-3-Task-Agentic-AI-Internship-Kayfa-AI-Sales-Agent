@@ -4,3 +4,4 @@ data
 eval
 .env
 requirments2.txt
+.streamlit

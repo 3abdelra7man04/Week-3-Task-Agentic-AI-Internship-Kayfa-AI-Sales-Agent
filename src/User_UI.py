@@ -1,6 +1,4 @@
-from dotenv import load_dotenv
 import streamlit as st
-from dotenv import load_dotenv
 from utils.styles import apply_styles
 from utils.components import get_base64_image
 from helpers.config import get_settings
@@ -41,13 +39,7 @@ logo_base64 = get_base64_image("kayfa logo.svg")
 # --- 2. Global Resource Lifecycle Caching --------------------------------------
 @st.cache_resource
 def get_global_resources():
-    load_dotenv()
-    try:
-        from helpers.config import Settings
-        settings_dict = dict(st.secrets)
-        settings = Settings(**settings_dict)
-    except Exception:
-        settings = get_settings() # Grab your project settings
+    settings = get_settings()  # Handles both .env (local) and st.secrets (cloud)
     
     # Initialize MongoDB Client
     client = MongoClient(settings.MONGODB_URL)
