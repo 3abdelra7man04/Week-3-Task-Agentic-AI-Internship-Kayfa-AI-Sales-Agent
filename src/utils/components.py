@@ -3,6 +3,10 @@ import os
 import base64
 
 def get_base64_image(image_path):
+    # Resolve relative paths from the src/ directory (where components.py lives)
+    if not os.path.isabs(image_path):
+        src_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        image_path = os.path.join(src_dir, image_path)
     if not os.path.exists(image_path):
         for ext in ['.png', '.jpg', '.jpeg', '.svg']:
             if os.path.exists(image_path + ext):
