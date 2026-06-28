@@ -19,6 +19,7 @@ from tools.semantic_search_tools import semantic_tools_list
 from tools.text_search_tools import text_tools_list
 from controllers.NLPController import NLPController
 from typing import Optional
+from pydantic_ai.models.openrouter import OpenRouterModel
 
 # Force clear cache so the new Agent initialization is picked up
 st.cache_resource.clear()
@@ -82,9 +83,10 @@ def get_global_resources():
         get_roadmap_details, list_all_roadmaps, save_crm_ticket
     ] + text_tools_list
 
+    model = OpenRouterModel("google/gemini-3.1-flash-lite")
     # create agent client
     agent_client = Agent(
-        model = "openrouter:google/gemini-3.1-flash-lite",
+        model = model,
         deps_type = AgentDeps,
         system_prompt = template_parser.get("rag", "system_prompt"),
         tools=tools,
