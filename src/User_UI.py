@@ -20,7 +20,7 @@ from tools.text_search_tools import text_tools_list
 from controllers.NLPController import NLPController
 from typing import Optional
 from pydantic_ai.providers.openai import OpenAIProvider
-from pydantic_ai.models.openai import OpenAIChatModel
+from pydantic_ai.models.openai import OpenAIModel
 
 # Force clear cache so the new Agent initialization is picked up
 st.cache_resource.clear()
@@ -88,7 +88,7 @@ def get_global_resources():
         base_url="https://openrouter.ai/api/v1",
         api_key=settings.OPENROUTER_API_KEY
     )
-    model = OpenAIChatModel("google/gemini-3.1-flash-lite", provider=provider)
+    model = OpenAIModel("google/gemini-3.1-flash-lite", provider=provider)
     # create agent client
     agent_client = Agent(
         model = model,
