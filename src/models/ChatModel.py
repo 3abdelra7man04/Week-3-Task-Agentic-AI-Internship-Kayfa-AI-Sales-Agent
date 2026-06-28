@@ -1,4 +1,3 @@
-from sqlalchemy import true
 from .BaseDataModel import BaseDataModel
 from .enums.DataBaseEnum import DataBaseEnum
 from bson.objectid import ObjectId
