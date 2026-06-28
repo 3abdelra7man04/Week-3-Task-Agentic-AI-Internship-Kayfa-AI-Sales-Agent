@@ -1,6 +1,7 @@
 from models.UserModel import UserModel
 from models.ChatModel import ChatModel
 from datetime import datetime
+from genai_prices import extract_usage
 
 def parse_iso(ts_str):
     if not ts_str:
@@ -9,6 +10,32 @@ def parse_iso(ts_str):
         return datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
     except Exception:
         return None
+
+def calculate_cost(usage_dict: dict, model_name: str, provider_name: str = "") -> float:
+    """Calculate cost using genai-prices from the usage data and model name."""
+    if not model_name or not usage_dict:
+        return 0.0
+    
+    try:
+        # Create a response structure compatible with genai-prices extraction (OpenAI chat flavor)
+        response_data = {
+            'model': model_name,
+            'usage': {
+                'prompt_tokens': usage_dict.get("input_tokens", usage_dict.get("request_tokens", 0)),
+                'completion_tokens': usage_dict.get("output_tokens", usage_dict.get("response_tokens", 0)),
+                'prompt_tokens_details': {
+                    'cached_tokens': usage_dict.get("cache_read_tokens", 0)
+                }
+            },
+        }
+        
+        prov_id = provider_name if provider_name else 'openrouter'
+        
+        extracted_usage = extract_usage(response_data, provider_id=prov_id, api_flavor='chat')
+        price = extracted_usage.calc_price()
+        return float(price.total_price)
+    except Exception:
+        return 0.0
 
 def fetch_all_monitoring_data(db_client):
     user_model = UserModel.create_instance(db_client)
@@ -51,7 +78,12 @@ def fetch_all_monitoring_data(db_client):
                 usage = raw_msg.get("usage", {})
                 i_tok = usage.get("request_tokens", usage.get("input_tokens", 0))
                 o_tok = usage.get("response_tokens", usage.get("output_tokens", 0))
-                cost = raw_msg.get("provider_details", {}).get("cost", 0.0)
+                import re
+                model_name = raw_msg.get("model_name") or "google/gemini-3.1-flash-lite"
+                # Strip trailing date suffixes like -20260507 from the model name
+                model_name = re.sub(r'-\d{8}$', '', model_name)
+                provider_name = raw_msg.get("provider_name") or "openrouter"
+                cost = calculate_cost(usage, model_name, provider_name)
             
             if kind == "request":
                 for part in parts:
