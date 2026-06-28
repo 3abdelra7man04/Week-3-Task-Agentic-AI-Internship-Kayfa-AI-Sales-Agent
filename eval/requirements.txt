@@ -1,4 +1,0 @@
-deepeval
-ragas
-requests
-faiss-cpu

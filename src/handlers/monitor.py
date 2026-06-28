@@ -48,8 +48,9 @@ def fetch_all_monitoring_data(db_client):
             cost = 0.0
             
             if kind == "response":
-                i_tok = raw_msg.get("usage", {}).get("input_tokens", 0)
-                o_tok = raw_msg.get("usage", {}).get("output_tokens", 0)
+                usage = raw_msg.get("usage", {})
+                i_tok = usage.get("request_tokens", usage.get("input_tokens", 0))
+                o_tok = usage.get("response_tokens", usage.get("output_tokens", 0))
                 cost = raw_msg.get("provider_details", {}).get("cost", 0.0)
             
             if kind == "request":
